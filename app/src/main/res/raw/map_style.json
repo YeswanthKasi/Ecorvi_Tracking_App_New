@@ -1,0 +1,21 @@
+{
+  "featureType": "all",
+  "elementType": "all",
+  "stylers": [
+    {
+      "visibility": "on"
+    },
+    {
+      "invert_lightness": true
+    },
+    {
+      "saturation": -100
+    },
+    {
+      "gamma": 0.5
+    },
+    {
+      "lightness": 30
+    }
+  ]
+}
