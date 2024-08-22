@@ -74,6 +74,16 @@
                 android:textColor="@color/white"
                 android:textSize="16sp" />
 
+            <TextView
+                android:id="@+id/select_login_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Login As:"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold"/>
+
             <!-- Signin Button -->
             <Button
                 android:id="@+id/signin_button"
@@ -83,9 +93,23 @@
                 android:backgroundTint="@color/colorAccent"
                 android:elevation="4dp"
                 android:padding="16dp"
-                android:text="Sign In"
+                android:text="Login as host"
                 android:textColor="@color/white"
                 android:textSize="16sp" />
+
+
+            <!-- Client Login Button -->
+            <Button
+                android:id="@+id/client_login_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="@color/colorAccent"
+                android:text="Login as Client"
+                android:textColor="@color/white"
+                android:elevation="4dp"
+                android:padding="16dp"
+                android:textSize="16sp"/>
 
         </LinearLayout>
 
