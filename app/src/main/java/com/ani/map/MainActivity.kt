@@ -3,6 +3,7 @@ package com.ani.map
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -17,8 +18,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.*
@@ -38,6 +38,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private val updateInterval = 5000L // 5 seconds
     private lateinit var mAuth: FirebaseAuth
     private lateinit var mGoogleSignInClient: GoogleSignInClient
+    private val polylineOptions = PolylineOptions().width(5f).color(Color.RED)
+    private var polyline: Polyline? = null
+    private var previousLatLng: LatLng? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +60,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         longitudeTextView = findViewById(R.id.longitudeTextView)
         fetchLocationButton = findViewById(R.id.fetchLocationButton)
 
-        
         // Initialize the map
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map_view) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -138,8 +140,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         if (latitude != null && longitude != null) {
             val latLng = LatLng(latitude, longitude)
             googleMap.clear()
-            googleMap.addMarker(MarkerOptions().position(latLng).title("Bus Location"))
+            googleMap.addMarker(MarkerOptions().position(latLng).title("Current Location"))
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+
+            // Update polyline with new location
+            if (previousLatLng != null) {
+                polylineOptions.add(previousLatLng!!).add(latLng)
+                polyline?.remove()
+                polyline = googleMap.addPolyline(polylineOptions)
+            } else {
+                // First point, initialize the polyline with the starting point
+                polylineOptions.add(latLng)
+                polyline = googleMap.addPolyline(polylineOptions)
+            }
+
+            previousLatLng = latLng
 
             latitudeTextView.text = "Latitude: $latitude"
             longitudeTextView.text = "Longitude: $longitude"
