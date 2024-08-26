@@ -3,5 +3,6 @@
     <string name="title_activity_maps">Ecorvi Location Tracking App</string>
     <string name="map_id">AIzaSyBgNDkbkEYXu3Lup7mpOCZ1kRXrPMU047U</string>
     <string name="default_web_client_id">732012067013-cibsppn4j6tuof6acsc4gerseo5r82mt.apps.googleusercontent.com</string>
-    <string name="title_activity_client">CLient Tracking App</string>
+    <string name="title_activity_client">Client Tracking App</string>
+    <string name="your_map_style_id">648f8d87cfd7d4ae</string>
 </resources>
