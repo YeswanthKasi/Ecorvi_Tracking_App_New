@@ -220,11 +220,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Apply the custom map style using the JSON file
         try {
-            // Load the custom map style from a raw resource
             mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style))
         } catch (e: Exception) {
             Log.e("MapsActivity", "Can't find style. Error: ", e)
         }
+
+        // Center the map on India and set zoom level
+        val indiaLatLng = LatLng(20.5937, 78.9629)
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(indiaLatLng, 5.0f))
+
+        // Adjust padding to move zoom controls up
+        mMap.setPadding(0, 350, 0, 0)  // Adjust the top padding as needed
     }
 
     companion object {

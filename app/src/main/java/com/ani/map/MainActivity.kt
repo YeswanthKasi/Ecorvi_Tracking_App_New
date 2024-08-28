@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -84,6 +85,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         this.googleMap = googleMap
         googleMap.uiSettings.isZoomControlsEnabled = true
+        googleMap.uiSettings.isMyLocationButtonEnabled = true
 
         // Check for location permissions
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -93,6 +95,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         googleMap.isMyLocationEnabled = true
+
+        // Center the map on India
+        val indiaLatLng = LatLng(20.5937, 78.9629)
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(indiaLatLng, 5.0f))
+
+        // Apply the custom map style
+        try {
+            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style))
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Can't find style. Error: ", e)
+        }
     }
 
     private fun startFetchingLocationData() {
@@ -140,7 +153,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         if (latitude != null && longitude != null) {
             val latLng = LatLng(latitude, longitude)
             googleMap.clear()
-            googleMap.addMarker(MarkerOptions().position(latLng).title("Current Location"))
+            googleMap.addMarker(MarkerOptions().position(latLng).title("Host Location"))
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
 
             // Update polyline with new location
