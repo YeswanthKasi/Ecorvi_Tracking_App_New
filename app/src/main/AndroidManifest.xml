@@ -23,7 +23,7 @@
     <!-- API Key for Google Maps -->
     <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="YOUR_API_KEY_HERE" />
+        android:value="AIzaSyBgNDkbkEYXu3Lup7mpOCZ1kRXrPMU047U" />
 
     <!-- Firebase Performance Monitoring -->
     <meta-data
