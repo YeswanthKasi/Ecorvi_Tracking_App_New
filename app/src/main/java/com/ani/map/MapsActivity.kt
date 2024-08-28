@@ -27,6 +27,8 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
+import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.perf.metrics.Trace
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
