@@ -5,12 +5,15 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.view.MenuItem
 import android.widget.Button
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.view.GravityCompat
 import com.ani.map.databinding.ActivityMapsBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -21,16 +24,15 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
-import com.google.firebase.perf.FirebasePerformance
-import com.google.firebase.perf.metrics.Trace
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -41,6 +43,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var signOutButton: Button
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
+    private lateinit var drawerToggle: ActionBarDrawerToggle
     private var requestingLocationUpdates = false
     private var isTracking = false
     private val polylineOptions = PolylineOptions().width(5f).color(Color.RED)
@@ -68,6 +71,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Set up Navigation Drawer
+        drawerToggle = ActionBarDrawerToggle(
+            this,
+            binding.drawerLayoutMaps,
+            R.string.default_web_client_id,
+            R.string.default_web_client_id
+        )
+        binding.drawerLayoutMaps.addDrawerListener(drawerToggle)
+        drawerToggle.syncState()
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.navViewMaps.setNavigationItemSelectedListener(this)
 
         liveLocationButton = findViewById(R.id.live_location_button)
         liveLocationButton.setOnClickListener {
@@ -106,8 +122,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 super.onLocationResult(result)
-
-                Log.i("@ani", "Location Changed ${result.lastLocation?.latitude}, ${result.lastLocation?.longitude} ")
+                Log.i(
+                    "@ani",
+                    "Location Changed ${result.lastLocation?.latitude}, ${result.lastLocation?.longitude} "
+                )
                 updateMapLocation(result.lastLocation)
             }
         }
@@ -127,7 +145,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
                 REQUEST_LOCATION_PERMISSION
             )
         } else {
@@ -135,7 +156,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -157,7 +182,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         ) {
             return
         }
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        fusedLocationProviderClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
         requestingLocationUpdates = true
     }
 
@@ -172,36 +201,32 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18f))
 
             if (startPoint == null) {
-                // First point, set as start point and add marker
                 startPoint = latLng
-                startMarker = mMap.addMarker(MarkerOptions().position(latLng).title("Start Point")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+                startMarker = mMap.addMarker(
+                    MarkerOptions().position(latLng).title("Start Point")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                )
             } else {
-                // Add new point and update polyline
                 endPoint = latLng
-                endMarker?.remove() // Remove previous end marker
-                endMarker = mMap.addMarker(MarkerOptions().position(latLng).title("End Point")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
+                endMarker?.remove()
+                endMarker = mMap.addMarker(
+                    MarkerOptions().position(latLng).title("End Point")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                )
 
-                // Update polyline to join location points
                 if (polylineOptions.points.isNotEmpty()) {
-                    polylineOptions.add(latLng) // Add the latest point to the polyline
+                    polylineOptions.add(latLng)
                 } else {
-                    polylineOptions.add(startPoint!!) // Add the start point if it’s the first update
+                    polylineOptions.add(startPoint!!)
                 }
 
-                // Remove previous polyline if it exists
                 polyline?.remove()
-
-                // Add new polyline
                 polyline = mMap.addPolyline(polylineOptions)
-
-                // Update start point for the next iteration
                 startPoint = endPoint
             }
 
-            // Store location data in Firebase Realtime Database
-            val locationData = LocationData(location.latitude, location.longitude, System.currentTimeMillis())
+            val locationData =
+                LocationData(location.latitude, location.longitude, System.currentTimeMillis())
             locationRef.push().setValue(locationData)
         }
     }
@@ -220,24 +245,53 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.uiSettings.isZoomControlsEnabled = true
         mMap.uiSettings.isMyLocationButtonEnabled = true
 
-        // Apply the custom map style using the JSON file
         try {
             mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style))
         } catch (e: Exception) {
             Log.e("MapsActivity", "Can't find style. Error: ", e)
         }
 
-        // Center the map on India and set zoom level
         val indiaLatLng = LatLng(20.5937, 78.9629)
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(indiaLatLng, 5.0f))
+        mMap.setPadding(0, 350, 0, 0)
+    }
 
-        // Adjust padding to move zoom controls up
-        mMap.setPadding(0, 350, 0, 0)  // Adjust the top padding as needed
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return if (drawerToggle.onOptionsItemSelected(item)) {
+            true
+        } else {
+            super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.nav_profile -> {
+                // Handle profile action
+                // Implement the profile action if needed
+            }
+
+            R.id.nav_main_activity -> {
+                startActivity(Intent(this, MainActivity::class.java))
+            }
+        }
+        binding.drawerLayoutMaps.closeDrawer(GravityCompat.START)
+        return true
+    }
+
+
+    override fun onBackPressed() {
+        if (binding.drawerLayoutMaps.isDrawerOpen(GravityCompat.START)) {
+            binding.drawerLayoutMaps.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
     }
 
     companion object {
         private const val REQUEST_LOCATION_PERMISSION = 1
     }
-}
 
-data class LocationData(val latitude: Double, val longitude: Double, val timestamp: Long)
+
+    data class LocationData(val latitude: Double, val longitude: Double, val timestamp: Long)
+}
