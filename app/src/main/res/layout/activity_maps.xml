@@ -14,46 +14,54 @@
         android:layout_height="match_parent">
 
         <!-- Map Fragment -->
+
+        <!-- Start Button -->
         <fragment
             android:id="@+id/map"
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="0dp" />
 
-        <!-- Start Button -->
+        <!-- Stop Button -->
+
+        <!-- Live Location Button -->
+
+        <!-- Sign Out Button -->
+
         <Button
             android:id="@+id/start_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="10dp"
-            android:layout_marginBottom="22dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="87dp"
             android:text="Start" />
 
-        <!-- Stop Button -->
         <Button
             android:id="@+id/stop_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="5dp"
-            android:layout_marginBottom="20dp"
+            android:layout_marginStart="-87dp"
+            android:layout_marginBottom="22dp"
             android:layout_toEndOf="@id/start_button"
             android:text="Stop" />
 
-        <!-- Live Location Button -->
         <Button
             android:id="@+id/live_location_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginEnd="68dp"
+            android:layout_marginEnd="64dp"
             android:layout_marginBottom="21dp"
             android:text="Live Location" />
 
-        <!-- Sign Out Button -->
         <Button
             android:id="@+id/sign_out_button"
             android:layout_width="wrap_content"

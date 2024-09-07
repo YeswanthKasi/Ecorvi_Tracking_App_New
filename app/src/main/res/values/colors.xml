@@ -8,6 +8,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="polyline_red">#FF0000</color> <!-- Red color -->
+    <color name="polyline_green">#00FF00</color> <!-- Green color -->
 
     <!-- add the missing colors -->
     <color name="colorPrimary">#FF6200EE</color> <!-- or any other color you prefer -->

@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-
     <!-- Application class where Firebase is initialized -->
     <application
         android:name=".MyApp"
@@ -19,17 +17,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MapApp"
         tools:targetApi="31">
-
         <!-- API Key for Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBgNDkbkEYXu3Lup7mpOCZ1kRXrPMU047U" />
-
         <!-- Firebase Performance Monitoring -->
         <meta-data
             android:name="firebase_performance_collection_enabled"
             android:value="true" />
-
         <!-- SignInActivity: The default launcher activity -->
         <activity
             android:name=".SignInActivity"
@@ -39,7 +34,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <!-- MainActivity: The Client app's main activity -->
         <activity
             android:name=".MainActivity"
@@ -50,7 +44,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <!-- MapsActivity: The Host app's main activity -->
         <activity
             android:name=".MapsActivity"

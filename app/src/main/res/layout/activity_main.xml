@@ -8,21 +8,23 @@
     tools:context=".MainActivity">
 
     <!-- Main Content Layout -->
+
+    <!-- Navigation Drawer -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <Button
             android:id="@+id/sign_out_button"
-            android:layout_width="147dp"
+            android:layout_width="146dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_gravity="center_horizontal"
             android:layout_marginStart="253dp"
-            android:layout_marginTop="13dp"
-            android:layout_marginEnd="11dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="12dp"
             android:layout_marginBottom="16dp"
             android:backgroundTint="@color/colorPrimary"
             android:elevation="4dp"
@@ -65,7 +67,6 @@
             android:layout_below="@id/fetchLocationButton" />
     </RelativeLayout>
 
-    <!-- Navigation Drawer -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view_main"
         android:layout_width="wrap_content"

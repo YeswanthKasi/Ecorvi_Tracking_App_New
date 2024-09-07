@@ -31,6 +31,8 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
+import com.google.android.gms.maps.model.Polyline
+
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
 
@@ -46,7 +48,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
     private lateinit var drawerToggle: ActionBarDrawerToggle
     private var requestingLocationUpdates = false
     private var isTracking = false
-    private val polylineOptions = PolylineOptions().width(5f).color(Color.RED)
+    private val polylineOptions = PolylineOptions().width(10f).color(Color.RED)
     private var startPoint: LatLng? = null
     private var endPoint: LatLng? = null
     private var polyline: Polyline? = null
@@ -87,7 +89,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
 
         liveLocationButton = findViewById(R.id.live_location_button)
         liveLocationButton.setOnClickListener {
-            requestLocationPermission()
+            fetchLastLocation()
         }
 
         signOutButton = findViewById(R.id.sign_out_button)
@@ -111,11 +113,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         locationRequest = LocationRequest.create().apply {
-            interval = TimeUnit.SECONDS.toMillis(5)
-            fastestInterval = TimeUnit.SECONDS.toMillis(5)
-            maxWaitTime = TimeUnit.SECONDS.toMillis(5)
+            interval = TimeUnit.SECONDS.toMillis(2)
+            fastestInterval = TimeUnit.SECONDS.toMillis(1)
+            maxWaitTime = TimeUnit.SECONDS.toMillis(2)
             priority = Priority.PRIORITY_HIGH_ACCURACY
         }
 
@@ -132,6 +136,40 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
 
         database = FirebaseDatabase.getInstance()
         locationRef = database.getReference("locations")
+    }
+
+    private fun fetchLastLocation() {
+        // Check for location permission
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Request location permission if not granted
+            requestLocationPermission()
+            return
+        }
+
+        // Fetch the last known location
+        fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                // Create LatLng from the location
+                val latLng = LatLng(location.latitude, location.longitude)
+                // Move the camera to the last known location with zoom level 18
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18f))
+            } else {
+                // Handle the case where location is null
+                Log.e("MapsActivity", "Last known location is null")
+                // You may want to inform the user or provide some fallback behavior here
+            }
+        }.addOnFailureListener { e ->
+            // Handle the case where fetching location failed
+            Log.e("MapsActivity", "Failed to fetch last known location", e)
+            // You may want to inform the user or provide some fallback behavior here
+        }
     }
 
     private fun requestLocationPermission() {
@@ -279,7 +317,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         return true
     }
 
-
     override fun onBackPressed() {
         if (binding.drawerLayoutMaps.isDrawerOpen(GravityCompat.START)) {
             binding.drawerLayoutMaps.closeDrawer(GravityCompat.START)
@@ -291,7 +328,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
     companion object {
         private const val REQUEST_LOCATION_PERMISSION = 1
     }
-
 
     data class LocationData(val latitude: Double, val longitude: Double, val timestamp: Long)
 }
