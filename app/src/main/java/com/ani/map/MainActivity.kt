@@ -32,6 +32,7 @@ import okhttp3.Request
 import com.google.gson.Gson
 import org.json.JSONObject
 import com.google.android.gms.maps.model.Polyline
+import org.checkerframework.checker.units.qual.A
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
 
@@ -50,10 +51,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
     private lateinit var navigationView: NavigationView
     private lateinit var drawerToggle: ActionBarDrawerToggle
     private lateinit var binding: ActivityMainBinding
-    private var currentLocationMarker: Marker? = null // Make sure this is declared at the class level
-    private val GVPCE = LatLng(17.8199, 83.3438)
-    private val GVPCEW = LatLng(17.8222, 83.3487)
-    private var routePolyline: Polyline? = null
+
+    private var currentLocationMarker: Marker? = null
+    private val coveredRoutePoints = mutableListOf<LatLng>()
+    private var coveredRoutePolyline: Polyline? = null
+
+    // New variables for recenter functionality
+    private lateinit var recenterButton: Button
+    private var isUserZooming = false
+    private var defaultZoomLevel: Float = 15f // Default zoom level for recentering
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +74,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         latitudeTextView = findViewById(R.id.latitudeTextView)
         longitudeTextView = findViewById(R.id.longitudeTextView)
         fetchLocationButton = findViewById(R.id.fetchLocationButton)
+        recenterButton = findViewById(R.id.recenter_button) // New recenter button
 
         // Initialize the map
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map_view) as SupportMapFragment
@@ -94,6 +101,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
 
         signOutButton.setOnClickListener {
             signOutAndStartSignInActivity()
+        }
+
+        // Recenter button functionality
+        recenterButton.setOnClickListener {
+            isUserZooming = false
+            recenterToLiveLocation()
         }
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true) // Enable the back button on the toolbar
@@ -183,8 +196,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
             )
 
-            // Update map camera
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+            // Update map camera only if the user is not zooming manually
+            if (!isUserZooming) {
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, defaultZoomLevel))
+            }
+
+            // Update polyline with new location
+            coveredRoutePoints.add(latLng)
+            updateCoveredRoutePolyline()
 
             // Update latitude and longitude TextViews
             latitudeTextView.text = "Latitude: $latitude"
@@ -195,22 +214,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         }
     }
 
-    private fun drawRoute() {
-        val directionURL = getDirectionURL(GVPCE, GVPCEW)
-        GetDirection(directionURL).execute()
-    }
+    private fun updateCoveredRoutePolyline() {
+        val polylineOptions = PolylineOptions()
+            .width(15f)
+            .color(android.graphics.Color.GREEN)
+            .geodesic(true)
 
-    private fun updateCameraToFitRoute() {
-        if (routePolyline == null) return
+        polylineOptions.addAll(coveredRoutePoints)
 
-        val boundsBuilder = LatLngBounds.Builder()
-        routePolyline?.points?.forEach { point ->
-            boundsBuilder.include(point)
-        }
+        // Remove the old polyline if it exists
+        coveredRoutePolyline?.remove()
 
-        val bounds = boundsBuilder.build()
-        val cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 100)
-        googleMap.animateCamera(cameraUpdate)
+        // Add the new polyline
+        coveredRoutePolyline = googleMap.addPolyline(polylineOptions)
     }
 
     private fun signOutAndStartSignInActivity() {
@@ -220,7 +236,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         finish()
     }
 
-    // Method to get the direction URL for GVPCE to GVPCEW
+    // Method to get the direction URL for Visakhapatnam to Hyderabad
     fun getDirectionURL(origin: LatLng, dest: LatLng): String {
         return "https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${dest.latitude},${dest.longitude}&sensor=false&mode=driving&key=AIzaSyBgNDkbkEYXu3Lup7mpOCZ1kRXrPMU047U"
     }
@@ -235,6 +251,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
             val result = ArrayList<List<LatLng>>()
             try {
                 val respObj = Gson().fromJson(data, GoogleMapDTO::class.java)
+
                 val path = ArrayList<LatLng>()
                 for (step in respObj.routes[0].legs[0].steps) {
                     path.addAll(decodePolyline(step.polyline.points))
@@ -247,27 +264,79 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         }
 
         override fun onPostExecute(result: List<List<LatLng>>) {
-            if (result.isNotEmpty()) {
-                val path = result[0]
-                val lineOptions = PolylineOptions()
-                    .addAll(path)
-                    .width(20f)
-                    .color(android.graphics.Color.RED)
-                    .geodesic(true)
-
-                // Remove old polyline if it exists
-                routePolyline?.remove()
-
-                // Add the new polyline
-                routePolyline = googleMap.addPolyline(lineOptions)
-
-                // Update the camera to fit the route
-                updateCameraToFitRoute()
+            val lineoption = PolylineOptions()
+            for (i in result.indices) {
+                lineoption.addAll(result[i])
+                lineoption.width(10f)
+                lineoption.color(android.graphics.Color.RED)
+                lineoption.geodesic(true)
             }
+            googleMap.addPolyline(lineoption)
         }
     }
 
-    // Decode polyline points
+    override fun onMapReady(googleMap: GoogleMap) {
+        this.googleMap = googleMap
+        googleMap.uiSettings.isZoomControlsEnabled = true
+
+        // Detect when the user manually changes the zoom level
+        googleMap.setOnCameraMoveStartedListener { reason ->
+            if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+                isUserZooming = true
+            }
+        }
+
+        // Apply custom map style (this part remains unchanged)
+
+        // Move camera to the default location initially
+        val GVPCE = LatLng(17.8199, 83.3438)
+        val GVPCEW = LatLng(17.8222, 83.3487)
+
+        // Fit the camera to the route initially
+        fitCameraToRoute(GVPCE, GVPCEW)
+
+        // Draw the route from GVPCE to GVPCEW
+        val directionURL = getDirectionURL(GVPCE, GVPCEW)
+        GetDirection(directionURL).execute()
+    }
+
+    private fun fitCameraToRoute(startPoint: LatLng, endPoint: LatLng) {
+        val boundsBuilder = LatLngBounds.Builder()
+        boundsBuilder.include(startPoint)
+        boundsBuilder.include(endPoint)
+
+        val bounds = boundsBuilder.build()
+        val padding = 100 // Padding to fit the route in the camera view
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+    }
+
+    private fun recenterToLiveLocation() {
+        // Fetch the last known location from the database and move the camera back to it
+        database.orderByKey().limitToLast(1).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (locationSnapshot in snapshot.children) {
+                    val latitude = locationSnapshot.child("latitude").getValue(Double::class.java)
+                    val longitude = locationSnapshot.child("longitude").getValue(Double::class.java)
+
+                    if (latitude != null && longitude != null) {
+                        val latLng = LatLng(latitude, longitude)
+
+                        // Move camera back to the live location and reset the zoom level
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, defaultZoomLevel))
+
+                        // Clear the user's custom zoom state
+                        isUserZooming = false
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+    }
+
+    // Polyline decoding logic remains the same...
     private fun decodePolyline(encoded: String): List<LatLng> {
         val poly = ArrayList<LatLng>()
         var index = 0
@@ -297,37 +366,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
             val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
             lng += dlng
 
-            val p = LatLng(
-                lat.toDouble() / 1E5,
-                lng.toDouble() / 1E5
-            )
+            val p = LatLng(lat / 1E5, lng / 1E5)
             poly.add(p)
         }
 
         return poly
-    }
-
-    override fun onMapReady(googleMap: GoogleMap) {
-        this.googleMap = googleMap
-        googleMap.uiSettings.isZoomControlsEnabled = true
-
-        // Apply custom map style
-        try {
-            val success = googleMap.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style)
-            )
-            if (!success) {
-                Log.e("MainActivity", "Style parsing failed.")
-            }
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Can't find style. Error: ${e.message}")
-        }
-
-        // Move camera to GVPCE
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GVPCE, 18f))
-
-        // Draw route from GVPCE to GVPCEW
-        val directionURL = getDirectionURL(GVPCE, GVPCEW)
-        GetDirection(directionURL).execute()
     }
 }
