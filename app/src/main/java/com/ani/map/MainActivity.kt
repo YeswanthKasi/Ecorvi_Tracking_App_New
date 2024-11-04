@@ -53,7 +53,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
     private lateinit var navigationView: NavigationView
     private lateinit var drawerToggle: ActionBarDrawerToggle
     private lateinit var binding: ActivityMainBinding
-
     private var currentLocationMarker: Marker? = null
     private val coveredRoutePoints = mutableListOf<LatLng>()
     private var coveredRoutePolyline: Polyline? = null
