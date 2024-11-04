@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -34,8 +36,8 @@ import org.json.JSONObject
 import com.google.android.gms.maps.model.Polyline
 import org.checkerframework.checker.units.qual.A
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
-
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener
+{
     private lateinit var googleMap: GoogleMap
     private lateinit var latitudeTextView: TextView
     private lateinit var longitudeTextView: TextView
@@ -55,7 +57,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
     private var currentLocationMarker: Marker? = null
     private val coveredRoutePoints = mutableListOf<LatLng>()
     private var coveredRoutePolyline: Polyline? = null
-
     // New variables for recenter functionality
     private lateinit var recenterButton: Button
     private var isUserZooming = false
@@ -65,6 +66,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+
+        // Change status bar color to match theme
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.statusBarColor = resources.getColor(R.color.colorPrimaryDark, theme)
+        }
+
+        // Set light status bar for dark icons on a light background
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        }
 
         // Initialize Firebase Auth
         mAuth = Firebase.auth

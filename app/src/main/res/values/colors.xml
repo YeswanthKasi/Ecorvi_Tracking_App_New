@@ -3,7 +3,7 @@
     <!-- existing colors -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
+    <color name="purple_700">@color/black</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
@@ -12,7 +12,7 @@
     <color name="polyline_green">#00FF00</color> <!-- Green color -->
 
     <!-- add the missing colors -->
-    <color name="colorPrimary">#FF6200EE</color> <!-- or any other color you prefer -->
-    <color name="colorPrimaryDark">#FF3700B3</color> <!-- or any other color you prefer -->
+    <color name="colorPrimary">@color/teal_200</color> <!-- or any other color you prefer -->
+    <color name="colorPrimaryDark">@android:color/holo_blue_dark</color> <!-- or any other color you prefer -->
     <color name="colorAccent">#FF03DAC5</color> <!-- or any other color you prefer -->
 </resources>
