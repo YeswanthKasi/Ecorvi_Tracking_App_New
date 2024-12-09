@@ -1,6 +1,7 @@
 name: CI/CD Pipeline for Android App
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - tracking-app  # Trigger the pipeline on pushes to the master branch
