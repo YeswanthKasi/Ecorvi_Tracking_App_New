@@ -1,5 +1,6 @@
 package com.ani.map
 
+import android.content.pm.PackageManager
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 
@@ -21,4 +22,13 @@ class ExampleInstrumentedTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("com.ani.map", appContext.packageName)
     }
+
+    @Test
+    fun appHasInternetPermission() {
+        // Verifies that the app has the INTERNET permission
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val hasPermission = appContext.checkCallingOrSelfPermission("android.permission.INTERNET") == PackageManager.PERMISSION_GRANTED
+        assertTrue("App should have INTERNET permission", hasPermission)
+    }
+
 }
