@@ -3,10 +3,10 @@ name: CI/CD Pipeline for Android App
 on:
   push:
     branches:
-      - master  # Trigger the pipeline on pushes to the master branch
+      - tracking-app  # Trigger the pipeline on pushes to the master branch
   pull_request:
     branches:
-      - master  # Trigger for pull requests targeting the master branch
+      - tracking-app  # Trigger for pull requests targeting the master branch
 
 permissions:
   contents: write  # Grant write access to the repository contents
