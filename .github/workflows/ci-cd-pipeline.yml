@@ -38,11 +38,15 @@ jobs:
             platforms;android-35  # Specify the Android API level you need
             build-tools;33.0.0  # Specify the build tools version you need
 
-      # Step 4: Grant execute permission to gradlew
+      # Step 4: Create the local.properties file (Important step)
+      - name: Create local.properties
+        run: echo "sdk.dir=${{ github.workspace }}/android-sdk" > local.properties
+
+      # Step 5: Grant execute permission to gradlew
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Step 5: Decode keystore and place it in the correct directory
+      # Step 6: Decode keystore and place it in the correct directory
       - name: Decode keystore from GitHub secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}  # Ensure this secret is added in GitHub
@@ -50,15 +54,15 @@ jobs:
           mkdir -p ./app/KEY_STORE
           echo "${KEYSTORE_BASE64}" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 6: Verify the keystore file is present
+      # Step 7: Verify the keystore file is present
       - name: Verify keystore file
         run: ls -la ./app/KEY_STORE
 
-      # Step 7: Run unit tests (optional)
+      # Step 8: Run unit tests (optional)
       - name: Run unit tests
         run: ./gradlew test
 
-      # Step 8: Build the Release APK
+      # Step 9: Build the Release APK
       - name: Build the project
         env:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}  # Set the key alias from secrets
@@ -66,7 +70,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}  # Set the store password from secrets
         run: ./gradlew assembleRelease
 
-      # Step 9: Create Git tag
+      # Step 10: Create Git tag
       - name: Create Tag
         id: create_tag
         run: |
@@ -79,7 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is set
 
-      # Step 10: Create GitHub Release and Upload APK
+      # Step 11: Create GitHub Release and Upload APK
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
