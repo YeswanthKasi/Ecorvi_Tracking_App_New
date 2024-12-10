@@ -3,95 +3,90 @@ name: CI/CD Pipeline for Android App
 on:
   push:
     branches:
-      - Tracking-app  # Trigger the pipeline on pushes to the Tracking-app branch
+      - Tracking-app
   pull_request:
     branches:
-      - Tracking-app  # Trigger for pull requests targeting the Tracking-app branch
+      - Tracking-app
   workflow_dispatch:
 
 permissions:
-  contents: write  # Grant write access to the repository contents
+  contents: write
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up JDK (Java 8 as you use it)
-      - name: Set up JDK 8
+      # Step 2: Set up JDK 11
+      - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
+          java-version: '11'
           distribution: 'zulu'
 
-      # Step 3: Set up Android SDK
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v2
-        with:
-          components: |
-            cmdline-tools;latest
-            platform-tools
-            platforms;android-35  # Specify the Android API level you need
-            build-tools;33.0.0  # Specify the build tools version you need
+      # Step 3: Set up Android SDK manually
+      - name: Install Android SDK
+        run: |
+          sudo mkdir -p /usr/local/lib/android/sdk
+          sudo chown $USER:$USER /usr/local/lib/android/sdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip -d /usr/local/lib/android/sdk
+          mkdir -p /usr/local/lib/android/sdk/cmdline-tools/latest
+          mv /usr/local/lib/android/sdk/cmdline-tools/* /usr/local/lib/android/sdk/cmdline-tools/latest/
+          echo "export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "export PATH=$PATH:/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_ENV
 
-      # Step 4: Create local.properties
+      # Step 4: Accept SDK licenses and install components
+      - name: Install Android components
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;33.0.0"
+
+      # Step 5: Create local.properties file
       - name: Create local.properties
         run: |
-          echo "sdk.dir=${ANDROID_HOME}" > local.properties
+          echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
 
-      # Step 5: Grant execute permission to gradlew
+      # Step 6: Grant execute permission to gradlew
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Step 6: Decode keystore and place it in the correct directory
-      - name: Decode keystore from GitHub secrets
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}  # Ensure this secret is added in GitHub
-        run: |
-          mkdir -p ./app/KEY_STORE
-          echo "${KEYSTORE_BASE64}" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
-
-      # Step 7: Verify the keystore file is present
-      - name: Verify keystore file
-        run: ls -la ./app/KEY_STORE
-
-      # Step 8: Run unit tests (optional)
+      # Step 7: Run unit tests (optional)
       - name: Run unit tests
         run: ./gradlew test
 
-      # Step 9: Build the Release APK
+      # Step 8: Build the Release APK
       - name: Build the project
         env:
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}  # Set the key alias from secrets
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}  # Set the key password from secrets
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}  # Set the store password from secrets
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 10: Create Git tag
+      # Step 9: Create Git tag
       - name: Create Tag
         id: create_tag
         run: |
-          TAG_NAME="v${{ github.run_number }}"  # Set the tag name to the run number
-          echo "Creating tag: $TAG_NAME"
-          git tag -d $TAG_NAME || true  # Delete the local tag if it exists
-          git push origin :refs/tags/$TAG_NAME || true  # Delete the remote tag if it exists
+          TAG_NAME="v${{ github.run_number }}"
+          git tag -d $TAG_NAME || true
+          git push origin :refs/tags/$TAG_NAME || true
           git tag $TAG_NAME
           git push origin $TAG_NAME
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is set
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 11: Create GitHub Release and Upload APK
+      # Step 10: Create GitHub Release and Upload APK
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ github.run_number }}  # Use the created tag
-          name: Release v${{ github.run_number }}  # Name of the release
-          body: "Release of APK version v${{ github.run_number }}"  # Description of the release
-          files: app/build/outputs/apk/release/app-release.apk  # Path to the APK file
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: "Release of APK version v${{ github.run_number }}"
+          files: app/build/outputs/apk/release/app-release.apk
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is set
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
