@@ -1,13 +1,14 @@
 name: CI/CD Pipeline for Android App
 
 on:
-  workflow_dispatch:
+
   push:
     branches:
-      - tracking-app  # Trigger the pipeline on pushes to the master branch
+      - Tracking-app  # Trigger the pipeline on pushes to the master branch
   pull_request:
     branches:
-      - tracking-app  # Trigger for pull requests targeting the master branch
+      - Tracking-app  # Trigger for pull requests targeting the master branch
+  workflow_dispatch:
 
 permissions:
   contents: write  # Grant write access to the repository contents
