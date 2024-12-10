@@ -3,10 +3,10 @@ name: CI/CD Pipeline for Android App
 on:
   push:
     branches:
-      - Tracking-app  # Trigger the pipeline on pushes to the master branch
+      - Tracking-app  # Trigger the pipeline on pushes to the Tracking-app branch
   pull_request:
     branches:
-      - Tracking-app  # Trigger for pull requests targeting the master branch
+      - Tracking-app  # Trigger for pull requests targeting the Tracking-app branch
   workflow_dispatch:
 
 permissions:
@@ -19,34 +19,28 @@ jobs:
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      # Step 2: Set up JDK (Java 8 as you use it)
+      # Step 2: Set up JDK 8 (as you are using it)
       - name: Set up JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v2
         with:
           java-version: '8'
           distribution: 'zulu'
 
-      # Step 3: Set up Android SDK (Modified)
+      # Step 3: Set up Android SDK
       - name: Set up Android SDK
         run: |
-          # Create the necessary directories
+          # Install Android command line tools and set up the SDK
           sudo mkdir -p /usr/local/lib/android/sdk
           sudo chown $USER:$USER /usr/local/lib/android/sdk
 
-          # Download and unzip the command-line tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           unzip cmdline-tools.zip -d /usr/local/lib/android/sdk
-
-          # Remove the existing 'latest' directory if it exists
           sudo rm -rf /usr/local/lib/android/sdk/cmdline-tools/latest
-
-          # Move the files to the 'latest' directory
           sudo mkdir -p /usr/local/lib/android/sdk/cmdline-tools/latest
           sudo mv /usr/local/lib/android/sdk/cmdline-tools/* /usr/local/lib/android/sdk/cmdline-tools/latest/
 
-          # Set environment variables
           echo "export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "export PATH=\$PATH:/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_ENV
 
@@ -54,23 +48,15 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Step 5: Decode keystore and place it in the correct directory
+      # Step 5: Decode keystore from GitHub secrets and place it in the correct directory
       - name: Decode keystore from GitHub secrets
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}  # Ensure this secret is added in GitHub
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           mkdir -p ./app/KEY_STORE
           echo "${KEYSTORE_BASE64}" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 6: Verify the keystore file is present
-      - name: Verify keystore file
-        run: ls -la ./app/KEY_STORE
-
-      # Step 7: Run tests (optional)
-      - name: Run unit tests
-        run: ./gradlew test
-
-      # Step 8: Build the Release APK
+      # Step 6: Build the Release APK
       - name: Build the project
         env:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}  # Set the key alias from secrets
@@ -78,27 +64,13 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}  # Set the store password from secrets
         run: ./gradlew assembleRelease
 
-      # Step 9: Create Git tag
-      - name: Create Tag
-        id: create_tag
-        run: |
-          TAG_NAME="v${{ github.run_number }}"  # Set the tag name to the run number
-          echo "Creating tag: $TAG_NAME"
-          git tag -d $TAG_NAME || true  # Delete the local tag if it exists
-          git push origin :refs/tags/$TAG_NAME || true  # Delete the remote tag if it exists
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is set
-
-      # Step 10: Create GitHub Release and Upload APK
-      - name: Create Release
-        id: create_release
+      # Step 7: Upload the APK to GitHub Releases
+      - name: Upload APK to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ github.run_number }}  # Use the created tag
-          name: Release v${{ github.run_number }}  # Name of the release
-          body: "Release of APK version v${{ github.run_number }}"  # Description of the release
-          files: app/build/outputs/apk/release/app-release.apk  # Path to the APK file
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: "Release of APK version v${{ github.run_number }}"
+          files: app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is set
