@@ -55,7 +55,7 @@ jobs:
           mkdir -p ./app/KEY_STORE
           echo "${KEYSTORE_BASE64}" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 7: Clean Build Directory
+      # Step 7: Clean Build Directory (Remove previous APK if exists)
       - name: Clean Build Directory
         run: rm -rf app/release/app-release.apk
 
@@ -68,15 +68,13 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 9: Verify the generated APK file
-      - name: Verify APK path
+      # Step 9: Verify the generated APK file and extract its path
+      - name: Verify APK path and extract the file path
+        id: verify_apk
         run: |
-          if [ ! -f app/release/app-release.apk ]; then
-            echo "APK not found. Build failed."
-            exit 1
-          fi
-          echo "APK generated successfully."
-
+          APK_PATH=$(find app/build/outputs/apk/release -name "app-release.apk")
+          echo "APK path: $APK_PATH"
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
 
       # Step 10: Create GitHub Release and Upload APK
       - name: Create GitHub Release
@@ -86,6 +84,6 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           body: "Automated release of APK version v${{ github.run_number }}"
-          files: app/release/app-release.apk
+          files: ${{ env.APK_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
