@@ -23,6 +23,18 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // Customize APK output directory for GitHub builds
+            applicationVariants.all { variant ->
+                variant.outputs.all { output ->
+                    if (project.hasProperty("buildForGitHub") && project.buildForGitHub == "true") {
+                        def outputDir = file("$buildDir/github-apks")
+                        outputDir.mkdirs() // Ensure directory exists
+                        output.outputFileName = "app-release-${variant.versionName}.apk"
+                        println "Custom output directory for GitHub: ${outputDir.absolutePath}"
+                    }
+                }
+            }
         }
     }
 
@@ -41,6 +53,8 @@ android {
 
     namespace 'com.ani.map'
 }
+
+
 
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
