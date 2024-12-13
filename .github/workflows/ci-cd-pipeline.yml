@@ -55,9 +55,6 @@ jobs:
           mkdir -p ./app/KEY_STORE
           echo "${KEYSTORE_BASE64}" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 7: Clean Build Directory (Remove previous APK if exists)
-      - name: Clean Build Directory
-        run: rm -rf app/release/app-release.apk
 
       # Step 8: Build Release APK
       - name: Build Release APK
@@ -84,6 +81,6 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           body: "Automated release of APK version v${{ github.run_number }}"
-          files: ${{ env.APK_PATH }}
+          files: ${{ env.APK_PATH }}  # Use the dynamically determined APK path
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
