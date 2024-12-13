@@ -21,7 +21,7 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("./app/KEY_STORE/Ecorvi_Tracking_App_New.jks")  // Use an absolute or relative path
+            storeFile file("KEY_STORE/Ecorvi_Tracking_App_New.jks")  // Use an absolute or relative path
             storePassword System.getenv("STORE_PASSWORD")
             keyAlias System.getenv("KEY_ALIAS")
             keyPassword System.getenv("KEY_PASSWORD")
