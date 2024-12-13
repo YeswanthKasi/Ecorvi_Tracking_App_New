@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the repository
@@ -38,11 +38,16 @@ jobs:
             platforms;android-35  # Replace with your required API level
             build-tools;33.0.0  # Replace with your required build tools version
 
-      # Step 4: Grant execute permission to gradlew
+      # Step 4: Generate local.properties
+      - name: Generate local.properties
+        run: |
+          echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
+
+      # Step 5: Grant execute permission to gradlew
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Step 5: Decode keystore for signing
+      # Step 6: Decode keystore for signing
       - name: Decode keystore from secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -50,11 +55,11 @@ jobs:
           mkdir -p ./app/KEY_STORE
           echo "${KEYSTORE_BASE64}" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 6: Clean Build Directory
+      # Step 7: Clean Build Directory
       - name: Clean Build Directory
         run: rm -rf app/release/app-release.apk
 
-      # Step 7: Build APK (Release version)
+      # Step 8: Build Release APK
       - name: Build Release APK
         id: build_apk
         env:
@@ -63,7 +68,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 8: Verify the generated APK file
+      # Step 9: Verify the generated APK file
       - name: Verify APK path
         run: |
           if [ ! -f app/release/app-release.apk ]; then
@@ -73,7 +78,7 @@ jobs:
           echo "APK generated successfully."
 
 
-      # Step 9: Create GitHub Release and Upload APK
+      # Step 10: Create GitHub Release and Upload APK
       - name: Create GitHub Release
         id: release
         uses: softprops/action-gh-release@v1
