@@ -94,3 +94,14 @@ jobs:
           files: app/build/outputs/apk/release/app-release.apk  # Use the dynamically generated APK
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 12: Upload APK to Indus Appstore
+      - name: Upload to Indus Appstore
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJpZGVudGl0eU1hbmFnZXIiLCJ2ZXJzaW9uIjoiNC4wIiwidGlkIjoiNzUzMTlhOTctMjE0Yi00N2Q3LTk5OTUtMzgxZjNiY2FkYmVlIiwic2lkIjoiOTZlMjNhMmMtNzc5My00OGExLWExNTgtMTVhZjZkYjZlM2E2IiwiaWF0IjoxNzMzODY2NDc2LCJleHAiOjIwNDkyMjY0NzZ9.nBicIXiEuivFckyo-kuQpG12ZhjZZxMJY33FrwW-ctKGIgwB2sjEO4sxAcO0agbLjk9KBhKqvy1x9eGuUcoezA" \
+            -F "apk=@app/build/outputs/apk/release/app-release.apk" \
+            https://developer-api.indusappstore.com/apis/indus-developerdashboard-service/devtools/apk/upgrade/com.ecorvi.TrackingApp
+
+        env:
+          PACKAGE_NAME: com.ani.map
