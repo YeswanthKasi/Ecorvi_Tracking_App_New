@@ -46,7 +46,7 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Step 6: Decode keystore for signing (Optional if APK is signed manually)
+      # Step 6: Decode keystore for signing
       - name: Decode keystore from secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -54,11 +54,7 @@ jobs:
           mkdir -p ./app/KEY_STORE
           echo "${KEYSTORE_BASE64}" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 7: Run unit tests (optional, can be removed)
-      - name: Run unit tests
-        run: ./gradlew test
-
-      # Step 8: Build APK (Release version)
+      # Step 7: Build APK (Release version)
       - name: Build Release APK
         env:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -66,22 +62,13 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 9: Verify the generated APK file
+      # Step 8: Verify the generated APK file
       - name: Verify APK path
         run: ls -la app/build/outputs/apk/release/
 
-      # Step 10: Upload APK to Indus Appstore
-      - name: Upload to Indus Appstore
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJpZGVudGl0eU1hbmFnZXIiLCJ2ZXJzaW9uIjoiNC4wIiwidGlkIjoiNzUzMTlhOTctMjE0Yi00N2Q3LTk5OTUtMzgxZjNiY2FkYmVlIiwic2lkIjoiOTZlMjNhMmMtNzc5My00OGExLWExNTgtMTVhZjZkYjZlM2E2IiwiaWF0IjoxNzMzODY2NDc2LCJleHAiOjIwNDkyMjY0NzZ9.nBicIXiEuivFckyo-kuQpG12ZhjZZxMJY33FrwW-ctKGIgwB2sjEO4sxAcO0agbLjk9KBhKqvy1x9eGuUcoezA" \
-            -F "apk=@app/build/outputs/apk/release/app-release.apk" \
-            https://developer-api.indusappstore.com/apis/indus-developerdashboard-service/devtools/apk/upgrade/com.ani.map
 
-        env:
-          PACKAGE_NAME: com.ani.map
 
-      # Step 11: Create GitHub Release and Upload APK
+      # Step 9: Create GitHub Release and Upload APK
       - name: Create GitHub Release
         id: release
         uses: softprops/action-gh-release@v1
@@ -89,6 +76,6 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           body: "Automated release of APK version v${{ github.run_number }}"
-          files: app/build/outputs/apk/release/app-release.apk  # Use the dynamically generated APK
+          files: app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
