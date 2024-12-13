@@ -84,7 +84,17 @@ jobs:
           fi
           echo "APK found: ${{ env.APK_PATH }}"
 
-      # Step 11: Create GitHub Release and Upload APK
+      # Step 11: Upload APK to Indus Appstore
+      - name: Upload APK to Indus Appstore
+        run: |
+          curl -X POST https://developer-api.indusappstore.com/apis/indus-developerdashboard-service/devtools/apk/upgrade/${{ secrets.PACKAGE_NAME }} \
+          -H "Authorization: ${INDUS_API_KEY}" \
+          -F "file=@${{ env.APK_PATH }}" \
+          -F "packageName=${{ secrets.PACKAGE_NAME }}"
+        env:
+          INDUS_API_KEY: ${{ secrets.INDUS_API_KEY }}
+
+      # Step 12: Create GitHub Release and Upload APK
       - name: Create GitHub Release
         id: release
         uses: softprops/action-gh-release@v1
