@@ -19,8 +19,18 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            storeFile file("./app/KEY_STORE/Ecorvi_Tracking_App_New.jks")  // Use an absolute or relative path
+            storePassword System.getenv("STORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
@@ -53,8 +63,6 @@ android {
 
     namespace 'com.ani.map'
 }
-
-
 
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
