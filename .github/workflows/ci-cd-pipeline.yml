@@ -70,18 +70,16 @@ jobs:
       - name: Verify APK path
         run: ls -la app/build/outputs/apk/release/
 
-      # Step 10: Create Git tag
-      - name: Create Tag
-        id: create_tag
+      # Step 10: Upload APK to Indus Appstore
+      - name: Upload to Indus Appstore
         run: |
-          TAG_NAME="v${{ github.run_number }}"  # Set the tag name to the run number
-          echo "Creating tag: $TAG_NAME"
-          git tag -d $TAG_NAME || true  # Delete the local tag if it exists
-          git push origin :refs/tags/$TAG_NAME || true  # Delete the remote tag if it exists
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
+          curl -X POST \
+            -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJpZGVudGl0eU1hbmFnZXIiLCJ2ZXJzaW9uIjoiNC4wIiwidGlkIjoiNzUzMTlhOTctMjE0Yi00N2Q3LTk5OTUtMzgxZjNiY2FkYmVlIiwic2lkIjoiOTZlMjNhMmMtNzc5My00OGExLWExNTgtMTVhZjZkYjZlM2E2IiwiaWF0IjoxNzMzODY2NDc2LCJleHAiOjIwNDkyMjY0NzZ9.nBicIXiEuivFckyo-kuQpG12ZhjZZxMJY33FrwW-ctKGIgwB2sjEO4sxAcO0agbLjk9KBhKqvy1x9eGuUcoezA" \
+            -F "apk=@app/build/outputs/apk/release/app-release.apk" \
+            https://developer-api.indusappstore.com/apis/indus-developerdashboard-service/devtools/apk/upgrade/com.ani.map
+
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_NAME: com.ani.map
 
       # Step 11: Create GitHub Release and Upload APK
       - name: Create GitHub Release
@@ -94,14 +92,3 @@ jobs:
           files: app/build/outputs/apk/release/app-release.apk  # Use the dynamically generated APK
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Step 12: Upload APK to Indus Appstore
-      - name: Upload to Indus Appstore
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJpZGVudGl0eU1hbmFnZXIiLCJ2ZXJzaW9uIjoiNC4wIiwidGlkIjoiNzUzMTlhOTctMjE0Yi00N2Q3LTk5OTUtMzgxZjNiY2FkYmVlIiwic2lkIjoiOTZlMjNhMmMtNzc5My00OGExLWExNTgtMTVhZjZkYjZlM2E2IiwiaWF0IjoxNzMzODY2NDc2LCJleHAiOjIwNDkyMjY0NzZ9.nBicIXiEuivFckyo-kuQpG12ZhjZZxMJY33FrwW-ctKGIgwB2sjEO4sxAcO0agbLjk9KBhKqvy1x9eGuUcoezA" \
-            -F "apk=@app/build/outputs/apk/release/app-release.apk" \
-            https://developer-api.indusappstore.com/apis/indus-developerdashboard-service/devtools/apk/upgrade/com.ecorvi.TrackingApp
-
-        env:
-          PACKAGE_NAME: com.ani.map
