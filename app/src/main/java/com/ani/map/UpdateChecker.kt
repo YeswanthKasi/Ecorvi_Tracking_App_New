@@ -11,7 +11,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class UpdateChecker(private val context: Context) {
-
     // GitHub repository info
     private val owner = "YeswanthKasi"  // Your GitHub username
     private val repo = "Ecorvi_Tracking_App_New"  // Your GitHub repo name
