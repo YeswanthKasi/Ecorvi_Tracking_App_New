@@ -1,6 +1,8 @@
 package com.ani.map
 
+import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
@@ -30,7 +32,8 @@ class SignInActivity : AppCompatActivity() {
 
         // Set light status bar for dark icons on a light background
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+            window.decorView.systemUiVisibility =
+                window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
 
         // Initialize views
@@ -42,12 +45,22 @@ class SignInActivity : AppCompatActivity() {
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
 
+        // Check for updates on app launch
+        UpdateChecker(this).checkForUpdates(
+            onUpdateAvailable = { apkUrl ->
+                showUpdateDialog(apkUrl)
+            },
+            onNoUpdate = {
+                Toast.makeText(this, "App is up-to-date", Toast.LENGTH_SHORT).show()
+            }
+        )
+
         // Sign-in button click listener (for default sign-in action)
         signinButton.setOnClickListener {
             val email = usernameEditText.text.toString()
             val password = passwordEditText.text.toString()
 
-            if (email.isEmpty() || password.isEmpty()) {  // Fixed typo here
+            if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please enter both email and password", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -72,7 +85,7 @@ class SignInActivity : AppCompatActivity() {
             val email = usernameEditText.text.toString()
             val password = passwordEditText.text.toString()
 
-            if (email.isEmpty() || password.isEmpty()) {  // Fixed typo here
+            if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please enter both email and password", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -91,5 +104,17 @@ class SignInActivity : AppCompatActivity() {
                     }
                 }
         }
+    }
+
+    private fun showUpdateDialog(apkUrl: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Update Available")
+            .setMessage("A new version of the app is available. Please update to continue.")
+            .setPositiveButton("Update") { _, _ ->
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl))
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }
