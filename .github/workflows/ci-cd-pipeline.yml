@@ -67,34 +67,38 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 9: Verify APK path and extract the file path
-      - name: Verify APK path and extract the file path
-        id: verify_apk
+      # Step 9: Rename APK with version number
+      - name: Rename APK with version number
+        id: rename_apk
         run: |
           APK_PATH=$(find app/build/outputs/apk/release -name "app-release*.apk")
-          echo "APK path: $APK_PATH"
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          TAG_NAME="v${{ github.run_number }}"
+          NEW_APK_NAME="${TAG_NAME}-app-release.apk"
+          mv "$APK_PATH" "app/build/outputs/apk/release/$NEW_APK_NAME"
+          echo "NEW_APK_NAME=app/build/outputs/apk/release/$NEW_APK_NAME" >> $GITHUB_ENV
+        env:
+          GITHUB_REF: ${{ github.ref }}
 
-      # Step 10: Check if APK exists
-      - name: Check if APK exists
+      # Step 10: Check if renamed APK exists
+      - name: Check if renamed APK exists
         run: |
-          if [ ! -f "${{ env.APK_PATH }}" ]; then
-            echo "APK not found. Build failed."
+          if [ ! -f "${{ env.NEW_APK_NAME }}" ]; then
+            echo "Renamed APK not found. Build failed."
             exit 1
           fi
-          echo "APK found: ${{ env.APK_PATH }}"
+          echo "Renamed APK found: ${{ env.NEW_APK_NAME }}"
 
       # Step 11: Upload APK to Indus Appstore
       - name: Upload APK to Indus Appstore
         run: |
           curl -X POST https://developer-api.indusappstore.com/apis/indus-developerdashboard-service/devtools/apk/upgrade/${{ secrets.PACKAGE_NAME }} \
           -H "Authorization: ${INDUS_API_KEY}" \
-          -F "file=@${{ env.APK_PATH }}" \
+          -F "file=@${{ env.NEW_APK_NAME }}" \
           -F "packageName=${{ secrets.PACKAGE_NAME }}"
         env:
           INDUS_API_KEY: ${{ secrets.INDUS_API_KEY }}
 
-      # Step 12: Create GitHub Release and Upload APK
+      # Step 12: Create GitHub Release and Upload Renamed APK
       - name: Create GitHub Release
         id: release
         uses: softprops/action-gh-release@v1
@@ -102,6 +106,6 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           body: "Automated release of APK version v${{ github.run_number }}"
-          files: ${{ env.APK_PATH }}
+          files: ${{ env.NEW_APK_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
