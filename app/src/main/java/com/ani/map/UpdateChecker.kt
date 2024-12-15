@@ -13,12 +13,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class UpdateChecker(private val context: Context) {
 
-    // GitHub repository info
-    private val owner = "YeswanthKasi"  // Your GitHub username
-    private val repo = "Ecorvi_Tracking_App_New"  // Your GitHub repo name
+    private val owner = "YeswanthKasi"
+    private val repo = "Ecorvi_Tracking_App_New"
     private val apiUrl = "https://api.github.com/"
-
-    // Your personal access token (replace with your actual token)
     private val token = "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"
 
     private val retrofit = Retrofit.Builder()
@@ -26,10 +23,10 @@ class UpdateChecker(private val context: Context) {
         .addConverterFactory(GsonConverterFactory.create())
         .client(OkHttpClient.Builder().addInterceptor { chain ->
             val newRequest = chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer $token")  // Add the token here
+                .addHeader("Authorization", "Bearer $token")
                 .build()
             chain.proceed(newRequest)
-        }.build()) // Add the Authorization header with the token
+        }.build())
         .build()
 
     private val service = retrofit.create(GitHubApiService::class.java)
@@ -38,26 +35,26 @@ class UpdateChecker(private val context: Context) {
         val currentVersion = getAppVersionName()
 
         if (currentVersion == null) {
-            // If unable to get the current version, skip checking
+            Log.e("UpdateChecker", "Failed to get current version")
             onNoUpdate()
             return
         }
 
-        // Make the network request to get the latest release from GitHub
-        val call = service.getLatestRelease(owner, repo)
-        call.enqueue(object : Callback<ReleaseResponse> {
+        service.getLatestRelease(owner, repo).enqueue(object : Callback<ReleaseResponse> {
             override fun onResponse(call: Call<ReleaseResponse>, response: Response<ReleaseResponse>) {
                 if (response.isSuccessful) {
                     val release = response.body()
                     if (release != null) {
-                        val latestVersion = release.tag_name.removePrefix("v") // Remove 'v' from version
+                        val latestVersion = release.tag_name.removePrefix("v")
                         val apkUrl = release.assets.firstOrNull()?.browser_download_url
 
-                        // Log the response for debugging
-                        Log.d("UpdateChecker", "Latest version: $latestVersion, APK URL: $apkUrl")
+                        Log.d("UpdateChecker", "Current: $currentVersion, Latest: $latestVersion, URL: $apkUrl")
 
                         if (apkUrl != null && isUpdateAvailable(currentVersion, latestVersion)) {
-                            onUpdateAvailable(apkUrl)
+                            if (!hasAlreadyNotified(latestVersion)) {
+                                onUpdateAvailable(apkUrl)
+                                saveNotifiedVersion(latestVersion)
+                            }
                         } else {
                             onNoUpdate()
                         }
@@ -65,12 +62,13 @@ class UpdateChecker(private val context: Context) {
                         onNoUpdate()
                     }
                 } else {
+                    Log.e("UpdateChecker", "GitHub API error: ${response.errorBody()?.string()}")
                     onNoUpdate()
                 }
             }
 
             override fun onFailure(call: Call<ReleaseResponse>, t: Throwable) {
-                t.printStackTrace()
+                Log.e("UpdateChecker", "Network error", t)
                 onNoUpdate()
             }
         })
@@ -87,20 +85,27 @@ class UpdateChecker(private val context: Context) {
     }
 
     private fun isUpdateAvailable(currentVersion: String, latestVersion: String): Boolean {
-        val currentVersionParts = currentVersion.split(".")
-        val latestVersionParts = latestVersion.split(".")
+        val currentVersionParts = currentVersion.split(".").map { it.toIntOrNull() ?: 0 }
+        val latestVersionParts = latestVersion.split(".").map { it.toIntOrNull() ?: 0 }
 
-        // Compare version parts one by one
-        for (i in currentVersionParts.indices) {
-            val currentPart = currentVersionParts.getOrNull(i)?.toIntOrNull() ?: 0
-            val latestPart = latestVersionParts.getOrNull(i)?.toIntOrNull() ?: 0
+        for (i in 0 until maxOf(currentVersionParts.size, latestVersionParts.size)) {
+            val currentPart = currentVersionParts.getOrNull(i) ?: 0
+            val latestPart = latestVersionParts.getOrNull(i) ?: 0
 
-            if (latestPart > currentPart) {
-                return true  // New version is greater, update available
-            } else if (latestPart < currentPart) {
-                return false  // Current version is greater, no update
-            }
+            if (latestPart > currentPart) return true
+            if (latestPart < currentPart) return false
         }
-        return latestVersionParts.size > currentVersionParts.size // Handle cases where versions differ in length
+        return false
+    }
+
+    private fun hasAlreadyNotified(latestVersion: String): Boolean {
+        val prefs = context.getSharedPreferences("update_checker", Context.MODE_PRIVATE)
+        val lastNotifiedVersion = prefs.getString("last_notified_version", null)
+        return lastNotifiedVersion == latestVersion
+    }
+
+    private fun saveNotifiedVersion(latestVersion: String) {
+        val prefs = context.getSharedPreferences("update_checker", Context.MODE_PRIVATE)
+        prefs.edit().putString("last_notified_version", latestVersion).apply()
     }
 }
