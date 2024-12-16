@@ -28,7 +28,6 @@ jobs:
           java-version: '17'
           distribution: 'zulu'
 
-
       # Step 3: Set up Android SDK
       - name: Set up Android SDK
         uses: android-actions/setup-android@v2
