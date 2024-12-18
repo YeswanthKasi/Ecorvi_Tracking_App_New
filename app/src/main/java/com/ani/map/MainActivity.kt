@@ -111,8 +111,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
             }
         }
 
+        signOutButton = findViewById(R.id.sign_out_button)
         signOutButton.setOnClickListener {
-            signOutAndStartSignInActivity()
+            signOutAndClearLoginState()
         }
 
         // Recenter button functionality
@@ -241,7 +242,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         coveredRoutePolyline = googleMap.addPolyline(polylineOptions)
     }
 
-    private fun signOutAndStartSignInActivity() {
+    private fun signOutAndClearLoginState() {
+        val sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.clear() // Clears login state
+        editor.apply()
+        
         mAuth.signOut()
         val intent = Intent(this, SignInActivity::class.java)
         startActivity(intent)

@@ -2,6 +2,7 @@ package com.ani.map
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +20,7 @@ class SignInActivity : AppCompatActivity() {
     private lateinit var signinButton: Button
     private lateinit var clientLoginButton: Button
     private lateinit var auth: FirebaseAuth
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,14 +38,17 @@ class SignInActivity : AppCompatActivity() {
                 window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
 
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
+
+        // Initialize Firebase Auth
+        auth = FirebaseAuth.getInstance()
+
         // Initialize views
         usernameEditText = findViewById(R.id.username_edittext)
         passwordEditText = findViewById(R.id.password_edittext)
         signinButton = findViewById(R.id.signin_button)
         clientLoginButton = findViewById(R.id.client_login_button)
-
-        // Initialize Firebase Auth
-        auth = FirebaseAuth.getInstance()
 
         // Check for updates on app launch
         UpdateChecker(this).checkForUpdates(
@@ -55,7 +60,7 @@ class SignInActivity : AppCompatActivity() {
             }
         )
 
-        // Sign-in button click listener (for default sign-in action)
+        // Sign-in button click listener (for Host user)
         signinButton.setOnClickListener {
             val email = usernameEditText.text.toString()
             val password = passwordEditText.text.toString()
@@ -65,16 +70,15 @@ class SignInActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Authenticate user
+            // Authenticate Host user
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        // Sign in success, default to MapsActivity
+                        saveLoginState(userType = "Host") // Save login state for Host
                         val intent = Intent(this, MapsActivity::class.java)
                         startActivity(intent)
                         finish()
                     } else {
-                        // If sign in fails, display a message to the user.
                         Toast.makeText(this, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -90,20 +94,46 @@ class SignInActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Authenticate user and open ClientMainActivity (or equivalent)
+            // Authenticate Client user
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        // Sign in success, start MainActivity (Client app)
+                        saveLoginState(userType = "Client") // Save login state for Client
                         val intent = Intent(this, MainActivity::class.java)
                         startActivity(intent)
                         finish()
                     } else {
-                        // If sign in fails, display a message to the user.
                         Toast.makeText(this, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Check login state and redirect if already logged in
+        val isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
+        val userType = sharedPreferences.getString("userType", "")
+
+        if (isLoggedIn) {
+            when (userType) {
+                "Host" -> {
+                    startActivity(Intent(this, MapsActivity::class.java))
+                }
+                "Client" -> {
+                    startActivity(Intent(this, MainActivity::class.java))
+                }
+            }
+            finish() // Prevent returning to SignInActivity
+        }
+    }
+
+    private fun saveLoginState(userType: String) {
+        // Save login state and user type in SharedPreferences
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("isLoggedIn", true) // Mark the user as logged in
+        editor.putString("userType", userType) // Save user type ("Host" or "Client")
+        editor.apply()
     }
 
     private fun showUpdateDialog(apkUrl: String) {

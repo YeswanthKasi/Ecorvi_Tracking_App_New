@@ -35,7 +35,6 @@ import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
 import com.google.android.gms.maps.model.Polyline
 
-
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var mMap: GoogleMap
@@ -107,7 +106,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
 
         signOutButton = findViewById(R.id.sign_out_button)
         signOutButton.setOnClickListener {
-            signOutAndStartSignInActivity()
+            signOutAndClearLoginState()
         }
 
         startButton = findViewById(R.id.start_button)
@@ -125,8 +124,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
-
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         locationRequest = LocationRequest.create().apply {
@@ -282,7 +279,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnN
         }
     }
 
-    private fun signOutAndStartSignInActivity() {
+    private fun signOutAndClearLoginState() {
+        val sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.clear() // Clears login state
+        editor.apply()
+
         mAuth.signOut()
         mGoogleSignInClient.signOut().addOnCompleteListener(this) {
             val intent = Intent(this, SignInActivity::class.java)
