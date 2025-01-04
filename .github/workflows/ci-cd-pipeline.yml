@@ -10,7 +10,7 @@ on:
   workflow_dispatch:  # Allows manual trigger
 
 permissions:
-  contents: write  # Grant write access to the repository contents
+  contents: write  # Grant write access to repository contents
 
 jobs:
   build:
@@ -46,19 +46,27 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Step 6: Decode keystore for signing
-      - name: Decode keystore from secrets
+      # Step 6: Decode Firebase Service Account Key
+      - name: Decode Firebase Service Account Key
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT_KEY" > firebase-service-account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$PWD/firebase-service-account.json
+
+      # Step 7: Decode keystore for signing
+      - name: Decode keystore for signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           mkdir -p ./app/KEY_STORE
           echo "$KEYSTORE_BASE64" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 7: Run unit tests
+      # Step 8: Run unit tests
       - name: Run unit tests
         run: ./gradlew test
 
-      # Step 8: Build Release APK
+      # Step 9: Build Release APK
       - name: Build Release APK
         id: build_apk
         env:
@@ -67,7 +75,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 9: Rename APK with version number
+      # Step 10: Rename APK with version number
       - name: Rename APK with version number
         id: rename_apk
         run: |
@@ -79,7 +87,7 @@ jobs:
         env:
           GITHUB_REF: ${{ github.ref }}
 
-      # Step 10: Check if renamed APK exists
+      # Step 11: Check if renamed APK exists
       - name: Check if renamed APK exists
         run: |
           if [ ! -f "${{ env.NEW_APK_NAME }}" ]; then
@@ -88,17 +96,17 @@ jobs:
           fi
           echo "Renamed APK found: ${{ env.NEW_APK_NAME }}"
 
-      # Step 11: Upload APK to Indus Appstore
-      - name: Upload APK to Indus Appstore
+      # Step 12: Upload APK to Firebase App Distribution
+      - name: Upload to Firebase App Distribution
         run: |
-          curl -X POST https://developer-api.indusappstore.com/apis/indus-developerdashboard-service/devtools/apk/upgrade/${{ secrets.PACKAGE_NAME }} \
-          -H "Authorization: ${INDUS_API_KEY}" \
-          -F "file=@${{ env.NEW_APK_NAME }}" \
-          -F "packageName=${{ secrets.PACKAGE_NAME }}"
+          firebase appdistribution:distribute "${{ env.NEW_APK_NAME }}" \
+          --app "${{ secrets.FIREBASE_APP_ID }}" \
+          --groups "testers" \
+          --token "${{ secrets.FIREBASE_TOKEN }}"
         env:
-          INDUS_API_KEY: ${{ secrets.INDUS_API_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: $PWD/firebase-service-account.json
 
-      # Step 12: Create GitHub Release and Upload Renamed APK
+      # Step 13: Create GitHub Release and Upload Renamed APK
       - name: Create GitHub Release
         id: release
         uses: softprops/action-gh-release@v1
