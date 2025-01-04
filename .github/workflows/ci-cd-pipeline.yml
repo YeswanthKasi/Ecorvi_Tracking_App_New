@@ -96,7 +96,12 @@ jobs:
           fi
           echo "Renamed APK found: ${{ env.NEW_APK_NAME }}"
 
-      # Step 12: Upload APK to Firebase App Distribution
+      # Step 12: Install Firebase CLI
+      - name: Install Firebase CLI
+        run: |
+          curl -sL https://firebase.tools | bash
+
+      # Step 13: Upload APK to Firebase App Distribution
       - name: Upload to Firebase App Distribution
         run: |
           firebase appdistribution:distribute "${{ env.NEW_APK_NAME }}" \
@@ -106,7 +111,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: $PWD/firebase-service-account.json
 
-      # Step 13: Create GitHub Release and Upload Renamed APK
+
+      # Step 14: Create GitHub Release and Upload Renamed APK
       - name: Create GitHub Release
         id: release
         uses: softprops/action-gh-release@v1
