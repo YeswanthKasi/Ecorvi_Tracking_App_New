@@ -49,15 +49,11 @@ jobs:
 
       # Step 5: Create the local.properties file
       - name: Create local.properties
-        run: |
-          echo "sdk.dir=${{ github.workspace }}/android-sdk" > local.properties
+        run: echo "sdk.dir=${{ github.workspace }}/android-sdk" > local.properties
 
       # Step 6: Grant execute permission to gradlew
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
-
-      # Step 7: Decode keystore for signing (not needed with service account)
-      # Remove this step as we'll use the service account for signing
 
       # Step 8: Run Lint
       - name: Run Lint
@@ -70,6 +66,11 @@ jobs:
       # Step 10: Build Release APK
       - name: Build Release APK
         id: build_apk
+        env:
+        # Remove these environment variables if using a service account
+        # KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        # KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        # STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
       # Step 11: Debug APK location
