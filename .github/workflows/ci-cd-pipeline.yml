@@ -38,15 +38,24 @@ jobs:
             platforms;android-35  # Replace with your required API level
             build-tools;33.0.0  # Replace with your required build tools version
 
-      # Step 4: Create the local.properties file
+      # Step 4: Cache Gradle dependencies
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # Step 5: Create the local.properties file
       - name: Create local.properties
         run: echo "sdk.dir=${{ github.workspace }}/android-sdk" > local.properties
 
-      # Step 5: Grant execute permission to gradlew
+      # Step 6: Grant execute permission to gradlew
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Step 6: Decode keystore for signing
+      # Step 7: Decode keystore for signing
       - name: Decode keystore for signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -54,11 +63,15 @@ jobs:
           mkdir -p ./app/KEY_STORE
           echo "$KEYSTORE_BASE64" | base64 --decode > ./app/KEY_STORE/Ecorvi_Tracking_App_New.jks
 
-      # Step 7: Run unit tests
+      # Step 8: Run Lint
+      - name: Run Lint
+        run: ./gradlew lint
+
+      # Step 9: Run unit tests
       - name: Run unit tests
         run: ./gradlew test
 
-      # Step 8: Build Release APK
+      # Step 10: Build Release APK
       - name: Build Release APK
         id: build_apk
         env:
@@ -67,11 +80,15 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 9: Rename APK with version number
+      # Step 11: Rename APK with version number
       - name: Rename APK with version number
         id: rename_apk
         run: |
-          APK_PATH=$(find app/build/outputs/apk/release -name "app-release*.apk")
+          APK_PATH=$(find app/build/outputs/apk/release -name "app-release*.apk" || true)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: APK not found. Build may have failed."
+            exit 1
+          fi
           TAG_NAME="v${{ github.run_number }}"
           NEW_APK_NAME="${TAG_NAME}-app-release.apk"
           mv "$APK_PATH" "app/build/outputs/apk/release/$NEW_APK_NAME"
@@ -79,16 +96,16 @@ jobs:
         env:
           GITHUB_REF: ${{ github.ref }}
 
-      # Step 10: Check if renamed APK exists
+      # Step 12: Check if renamed APK exists
       - name: Check if renamed APK exists
         run: |
           if [ ! -f "${{ env.NEW_APK_NAME }}" ]; then
-            echo "Renamed APK not found. Build failed."
+            echo "Error: Renamed APK not found. Build failed."
             exit 1
           fi
           echo "Renamed APK found: ${{ env.NEW_APK_NAME }}"
 
-      # Step 11: Deploy to Google Play
+      # Step 13: Deploy to Google Play
       - name: Deploy to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
@@ -97,3 +114,15 @@ jobs:
           releaseFiles: ${{ env.NEW_APK_NAME }}
           track: production  # Deployment track (e.g., production, beta, internal)
           inAppUpdatePriority: 3  # Optional: Priority level for in-app updates (0-5)
+
+      # Step 14: Create GitHub Release and Upload Renamed APK
+      - name: Create GitHub Release
+        id: release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: "Automated release of APK version v${{ github.run_number }}"
+          files: ${{ env.NEW_APK_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
