@@ -3,11 +3,11 @@ name: CI/CD Pipeline for Android App
 on:
   push:
     branches:
-      - Tracking-app  # Trigger the pipeline on pushes to the Tracking-app branch
+      - Tracking-app  # Trigger on pushes to the Tracking-app branch
   pull_request:
     branches:
-      - Tracking-app  # Trigger for pull requests targeting the Tracking-app branch
-  workflow_dispatch:  # Allows manual trigger
+      - Tracking-app  # Trigger on pull requests targeting the Tracking-app branch
+  workflow_dispatch:  # Allow manual trigger
 
 permissions:
   contents: write  # Grant write access to repository contents
@@ -80,7 +80,11 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      # Step 11: Rename APK with version number
+      # Step 11: Debug APK location
+      - name: Debug APK Location
+        run: find app/build/outputs/apk/release -name "*.apk"
+
+      # Step 12: Rename APK with version number
       - name: Rename APK with version number
         id: rename_apk
         run: |
@@ -96,7 +100,7 @@ jobs:
         env:
           GITHUB_REF: ${{ github.ref }}
 
-      # Step 12: Check if renamed APK exists
+      # Step 13: Check if renamed APK exists
       - name: Check if renamed APK exists
         run: |
           if [ ! -f "${{ env.NEW_APK_NAME }}" ]; then
@@ -105,8 +109,8 @@ jobs:
           fi
           echo "Renamed APK found: ${{ env.NEW_APK_NAME }}"
 
-      # Step 13: Deploy to Google Play
-      - name: Deploy to Google Play
+      # Step 14: Deploy to Google Play
+      - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: ${{ secrets.GOOGLE_PLAY_JSON }}
@@ -114,15 +118,16 @@ jobs:
           releaseFiles: ${{ env.NEW_APK_NAME }}
           track: production  # Deployment track (e.g., production, beta, internal)
           inAppUpdatePriority: 3  # Optional: Priority level for in-app updates (0-5)
+          status: completed
 
-      # Step 14: Create GitHub Release and Upload Renamed APK
+      # Step 15: Create GitHub Release and Upload Renamed APK
       - name: Create GitHub Release
         id: release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
-          body: "Automated release of APK version v${{ github.run_number }}"
+          body: "Automated release of APK version v${{ github.run_number }}."
           files: ${{ env.NEW_APK_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
